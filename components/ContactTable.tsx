@@ -623,15 +623,23 @@ interface Props {
 
 export default function ContactTable({ contacts, selectedIds, onSelectionChange, minConfidence }: Props) {
   const { visible, toggle } = useColumnVisibility()
+  const [selectMenuOpen, setSelectMenuOpen] = useState(false)
+  const [customN, setCustomN] = useState('')
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!selectMenuOpen) return
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setSelectMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [selectMenuOpen])
 
   const allOnPageSelected = contacts.length > 0 && contacts.every(c => selectedIds.has(c.id))
-
-  const toggleAll = () => {
-    const next = new Set(selectedIds)
-    if (allOnPageSelected) contacts.forEach(c => next.delete(c.id))
-    else contacts.forEach(c => next.add(c.id))
-    onSelectionChange(next)
-  }
+  const someSelected = selectedIds.size > 0
 
   const handleSelect = useCallback((id: string, checked: boolean) => {
     const next = new Set(selectedIds)
@@ -639,6 +647,25 @@ export default function ContactTable({ contacts, selectedIds, onSelectionChange,
     else next.delete(id)
     onSelectionChange(next)
   }, [selectedIds, onSelectionChange])
+
+  const selectPage = () => {
+    const next = new Set(selectedIds)
+    contacts.forEach(c => next.add(c.id))
+    onSelectionChange(next)
+    setSelectMenuOpen(false)
+  }
+
+  const deselectAll = () => {
+    onSelectionChange(new Set())
+    setSelectMenuOpen(false)
+  }
+
+  const selectN = (n: number) => {
+    const next = new Set(contacts.slice(0, n).map(c => c.id))
+    onSelectionChange(next)
+    setSelectMenuOpen(false)
+    setCustomN('')
+  }
 
   const show = (col: ColKey) => visible.has(col)
 
@@ -655,8 +682,53 @@ export default function ContactTable({ contacts, selectedIds, onSelectionChange,
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-gray-700 text-gray-400 text-xs uppercase tracking-wide">
-              <th className="px-2 py-2 w-8">
-                <input type="checkbox" checked={allOnPageSelected} onChange={toggleAll} className="accent-purple-500" />
+              <th className="px-2 py-2 w-8 relative">
+                <div className="flex items-center gap-0.5">
+                  <input
+                    type="checkbox"
+                    checked={allOnPageSelected}
+                    ref={el => { if (el) el.indeterminate = someSelected && !allOnPageSelected }}
+                    onChange={() => someSelected ? deselectAll() : selectPage()}
+                    className="accent-purple-500"
+                  />
+                  <button
+                    onClick={e => { e.stopPropagation(); setSelectMenuOpen(o => !o) }}
+                    className="text-gray-500 hover:text-gray-300 text-xs leading-none"
+                    title="Selection options"
+                  >▾</button>
+                </div>
+                {selectMenuOpen && (
+                  <div ref={menuRef} className="absolute left-0 top-full z-50 mt-1 w-52 bg-gray-800 border border-gray-600 rounded shadow-xl text-xs text-gray-200">
+                    <button onClick={selectPage} className="w-full text-left px-3 py-2 hover:bg-gray-700">
+                      Select this page ({contacts.length})
+                    </button>
+                    {[10, 25, 50].map(n => (
+                      <button key={n} onClick={() => selectN(n)} className="w-full text-left px-3 py-2 hover:bg-gray-700">
+                        Select first {n}
+                      </button>
+                    ))}
+                    <div className="flex items-center gap-2 px-3 py-2 border-t border-gray-700">
+                      <input
+                        type="number"
+                        min={1}
+                        placeholder="Custom #"
+                        value={customN}
+                        onChange={e => setCustomN(e.target.value)}
+                        onClick={e => e.stopPropagation()}
+                        className="w-20 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs"
+                      />
+                      <button
+                        onClick={() => { const n = parseInt(customN); if (n > 0) selectN(n) }}
+                        className="text-purple-400 hover:text-purple-300"
+                      >Select</button>
+                    </div>
+                    {someSelected && (
+                      <button onClick={deselectAll} className="w-full text-left px-3 py-2 hover:bg-gray-700 border-t border-gray-700 text-red-400">
+                        Deselect all ({selectedIds.size})
+                      </button>
+                    )}
+                  </div>
+                )}
               </th>
               {show('priority') && <th className="px-2 py-2 w-14 text-center">Pri.</th>}
               {show('status') && <th className="px-3 py-2 w-24">Status</th>}
