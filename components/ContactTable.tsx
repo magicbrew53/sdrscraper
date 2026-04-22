@@ -619,9 +619,12 @@ interface Props {
   selectedIds: Set<string>
   onSelectionChange: (ids: Set<string>) => void
   minConfidence: number
+  total: number
+  allFilteredIds?: string[]
+  onDeleteSelected?: () => void
 }
 
-export default function ContactTable({ contacts, selectedIds, onSelectionChange, minConfidence }: Props) {
+export default function ContactTable({ contacts, selectedIds, onSelectionChange, minConfidence, total, allFilteredIds, onDeleteSelected }: Props) {
   const { visible, toggle } = useColumnVisibility()
   const [selectMenuOpen, setSelectMenuOpen] = useState(false)
   const [customN, setCustomN] = useState('')
@@ -698,11 +701,16 @@ export default function ContactTable({ contacts, selectedIds, onSelectionChange,
                   >▾</button>
                 </div>
                 {selectMenuOpen && (
-                  <div ref={menuRef} className="absolute left-0 top-full z-50 mt-1 w-52 bg-gray-800 border border-gray-600 rounded shadow-xl text-xs text-gray-200">
+                  <div ref={menuRef} className="absolute left-0 top-full z-50 mt-1 w-56 bg-gray-800 border border-gray-600 rounded shadow-xl text-xs text-gray-200">
                     <button onClick={selectPage} className="w-full text-left px-3 py-2 hover:bg-gray-700">
                       Select this page ({contacts.length})
                     </button>
-                    {[10, 25, 50].map(n => (
+                    {allFilteredIds && allFilteredIds.length > contacts.length && (
+                      <button onClick={() => { onSelectionChange(new Set(allFilteredIds)); setSelectMenuOpen(false) }} className="w-full text-left px-3 py-2 hover:bg-gray-700">
+                        Select all {total.toLocaleString()} filtered
+                      </button>
+                    )}
+                    {[10, 25, 50].map(n => n < total && (
                       <button key={n} onClick={() => selectN(n)} className="w-full text-left px-3 py-2 hover:bg-gray-700">
                         Select first {n}
                       </button>
@@ -723,8 +731,13 @@ export default function ContactTable({ contacts, selectedIds, onSelectionChange,
                       >Select</button>
                     </div>
                     {someSelected && (
-                      <button onClick={deselectAll} className="w-full text-left px-3 py-2 hover:bg-gray-700 border-t border-gray-700 text-red-400">
+                      <button onClick={deselectAll} className="w-full text-left px-3 py-2 hover:bg-gray-700 border-t border-gray-700 text-gray-400">
                         Deselect all ({selectedIds.size})
+                      </button>
+                    )}
+                    {someSelected && onDeleteSelected && (
+                      <button onClick={() => { setSelectMenuOpen(false); onDeleteSelected() }} className="w-full text-left px-3 py-2 hover:bg-gray-700 border-t border-gray-700 text-red-400">
+                        Delete selected ({selectedIds.size})
                       </button>
                     )}
                   </div>

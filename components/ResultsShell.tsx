@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Suspense } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import ContactTable from '@/components/ContactTable'
 import Filters from '@/components/Filters'
@@ -22,7 +22,7 @@ interface Props {
   minConfidence: number
 }
 
-export default function ResultsShell({
+function ResultsShellInner({
   contacts,
   total,
   page,
@@ -33,10 +33,24 @@ export default function ResultsShell({
   minConfidence,
 }: Props) {
   const router = useRouter()
+  const urlSearchParams = useSearchParams()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [allFilteredIds, setAllFilteredIds] = useState<string[]>([])
   const [deleting, setDeleting] = useState(false)
 
-  const handleDeleteSelected = async () => {
+  // Fetch all filtered IDs (for select-all across pages)
+  useEffect(() => {
+    const params = new URLSearchParams(urlSearchParams.toString())
+    params.delete('page')
+    params.delete('sort_by')
+    params.delete('sort_dir')
+    fetch(`/api/contacts/ids?${params.toString()}`)
+      .then(r => r.json())
+      .then(d => setAllFilteredIds(d.ids ?? []))
+      .catch(() => setAllFilteredIds([]))
+  }, [urlSearchParams])
+
+  const handleDeleteSelected = useCallback(async () => {
     if (selectedIds.size === 0) return
     if (!window.confirm(`Delete ${selectedIds.size} selected contact${selectedIds.size === 1 ? '' : 's'}? This cannot be undone.`)) return
     setDeleting(true)
@@ -51,7 +65,7 @@ export default function ResultsShell({
     } finally {
       setDeleting(false)
     }
-  }
+  }, [selectedIds, router])
 
   return (
     <main className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
@@ -108,6 +122,9 @@ export default function ResultsShell({
               selectedIds={selectedIds}
               onSelectionChange={setSelectedIds}
               minConfidence={minConfidence}
+              total={total}
+              allFilteredIds={allFilteredIds}
+              onDeleteSelected={handleDeleteSelected}
             />
             <Pagination
               page={page}
@@ -118,5 +135,13 @@ export default function ResultsShell({
         )}
       </div>
     </main>
+  )
+}
+
+export default function ResultsShell(props: Props) {
+  return (
+    <Suspense>
+      <ResultsShellInner {...props} />
+    </Suspense>
   )
 }
