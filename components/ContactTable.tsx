@@ -743,7 +743,7 @@ export default function ContactTable({ contacts, selectedIds, onSelectionChange,
                   </div>
                 )}
               </th>
-              {show('priority') && <th className="px-2 py-2 w-14 text-center">Pri.</th>}
+              {show('priority') && <th className="px-2 py-2 w-14 text-center" title="Call priority score (0-100): confidence 30% + DM score 40% + verification 30%">Score</th>}
               {show('status') && <th className="px-3 py-2 w-24">Status</th>}
               {show('niche') && <th className="px-3 py-2 w-36">Niche</th>}
               {show('name') && <th className="px-3 py-2 w-36">Name</th>}
