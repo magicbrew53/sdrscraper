@@ -80,14 +80,14 @@ export default function VerifyButton({ onComplete, selectedIds }: Props) {
     setRunning(true)
     setError(null)
 
-    const filters: Record<string, string> = {}
+    const filters: Record<string, string | string[]> = {}
     for (const [k, v] of searchParams.entries()) {
       if (['upload_id', 'status', 'niche', 'industry', 'search'].includes(k)) {
         filters[k] = v
       }
     }
     if (selectedIds && selectedIds.size > 0) {
-      filters.ids = [...selectedIds].join(',')
+      filters.ids = [...selectedIds]
     }
     if (!verifyAll) filters.new_only = 'true'
 
