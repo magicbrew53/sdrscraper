@@ -8,6 +8,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No ids provided' }, { status: 400 })
     }
     const db = getDb()
+    // Clear FK references before deleting to avoid constraint violations
+    await query(db,
+      `UPDATE contacts SET duplicate_of_id = NULL, duplicate_upload_filename = NULL, is_duplicate = false
+       WHERE duplicate_of_id = ANY($1::uuid[])`,
+      [pgUuidArray(ids)]
+    )
     await query(db,
       `DELETE FROM contacts WHERE id = ANY($1::uuid[])`,
       [pgUuidArray(ids)]
