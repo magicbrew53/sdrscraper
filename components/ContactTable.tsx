@@ -575,6 +575,9 @@ function ContactRow({
             )}
             {expanded && (
               <div className="space-y-1 text-sm text-gray-300">
+                <div className="flex justify-end mb-1">
+                  <button onClick={() => setExpanded(false)} className="text-gray-500 hover:text-gray-300 text-xs px-2 py-0.5 rounded hover:bg-gray-700">✕ Close</button>
+                </div>
                 {loadingDetail ? <p className="text-gray-500">Loading...</p> : detail ? (
                   <>
                     {detail.mqs_reason && <p><span className="text-gray-500">AI reason:</span> {detail.mqs_reason}</p>}
