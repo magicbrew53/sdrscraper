@@ -118,6 +118,7 @@ export const MQS_NICHES = [
   'Financial Advisory',
   'Nurse Telephone Triage',
   'Training Companies',
+  'Sales Training Companies',
 ] as const
 
 export type MqsNiche = typeof MQS_NICHES[number]
