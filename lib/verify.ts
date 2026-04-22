@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { getDb, query, sql } from './db'
+import { getDb, query, sql, pgUuidArray } from './db'
 import { serperSearch, formatResultsForPrompt } from './serper'
 
 const anthropic = new Anthropic()
@@ -270,7 +270,7 @@ export async function runVerification(jobId: string, contactIds: string[]): Prom
   await query(db,
     `UPDATE contacts SET verification_status = 'pending', verification_started_at = now()
      WHERE id = ANY($1::uuid[])`,
-    [contactIds]
+    [pgUuidArray(contactIds)]
   )
 
   // Fetch full contact data
@@ -279,7 +279,7 @@ export async function runVerification(jobId: string, contactIds: string[]): Prom
             employee_count, seniority, departments, mqs_status, mqs_niche, mqs_confidence,
             override_status, override_niche
      FROM contacts WHERE id = ANY($1::uuid[])`,
-    [contactIds]
+    [pgUuidArray(contactIds)]
   )
 
   const total = contacts.length
@@ -468,7 +468,7 @@ export async function getEligibleContactIds(filters: VerifyFilters): Promise<str
 
   if (filters.ids && filters.ids.length > 0) {
     conditions.push(`id = ANY($${idx++}::uuid[])`)
-    args.push(filters.ids)
+    args.push(pgUuidArray(filters.ids))
   } else {
     if (filters.upload_id) { conditions.push(`upload_id = $${idx++}`); args.push(filters.upload_id) }
     if (filters.status && filters.status !== 'All') {

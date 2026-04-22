@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server'
-import { getDb, query } from '@/lib/db'
+import { getDb, query, pgUuidArray } from '@/lib/db'
 import { getEligibleContactIds, runVerification, type VerifyFilters } from '@/lib/verify'
 
 export const maxDuration = 300
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
       const rows = await query<{ cnt: string }>(db,
         `SELECT COUNT(*) AS cnt FROM contacts
          WHERE id = ANY($1::uuid[]) AND verification_status NOT IN ('unverified', 'pending') AND verification_status IS NOT NULL`,
-        [ids]
+        [pgUuidArray(ids)]
       )
       alreadyVerifiedCount = parseInt(rows[0]?.cnt ?? '0')
     }

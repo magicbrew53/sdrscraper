@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb, query } from '@/lib/db'
+import { getDb, query, pgUuidArray } from '@/lib/db'
 import { buildContactsWhere } from '@/lib/query-builder'
 
 export async function GET(req: NextRequest) {
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
               COUNT(*) FILTER (WHERE last_exported_at IS NOT NULL) AS prev_exported,
               MIN(last_exported_at)::text AS earliest
        FROM contacts WHERE id = ANY($1::uuid[])`,
-      [selectedIds]
+      [pgUuidArray(selectedIds)]
     )
     totalCount = parseInt(rows[0].total)
     prevExportedCount = parseInt(rows[0].prev_exported)

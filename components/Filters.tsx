@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useCallback, useTransition, useRef } from 'react'
+import { useCallback, useTransition, useRef, useState } from 'react'
 import { MQS_NICHES } from '@/lib/types'
 import type { Upload } from '@/lib/types'
 
@@ -67,7 +67,8 @@ export default function Filters({ uploads, industries }: Props) {
   const currentSearch = get('search')
   const currentUpload = get('upload_id')
   const currentVerif = get('verification_status') || 'All'
-  const currentConf = parseInt(get('min_confidence') || '65')
+  const urlConf = parseInt(get('min_confidence') || '65')
+  const [sliderVal, setSliderVal] = useState(urlConf)
   const hideDuplicates = searchParams.get('hide_duplicates') !== 'false'
   const currentExported = get('exported') || 'All'
 
@@ -176,14 +177,19 @@ export default function Filters({ uploads, industries }: Props) {
             min={0}
             max={100}
             step={5}
-            value={currentConf}
-            onChange={e => {
-              const val = e.target.value
+            value={sliderVal}
+            onChange={e => setSliderVal(Number(e.target.value))}
+            onMouseUp={e => {
+              const val = (e.target as HTMLInputElement).value
+              push({ min_confidence: val === '0' ? '' : val })
+            }}
+            onTouchEnd={e => {
+              const val = (e.target as HTMLInputElement).value
               push({ min_confidence: val === '0' ? '' : val })
             }}
             className="w-28 accent-blue-500"
           />
-          <span className="text-gray-300 text-sm w-10">{currentConf}%</span>
+          <span className="text-gray-300 text-sm w-10">{sliderVal}%</span>
         </div>
 
         <label className="flex items-center gap-2 cursor-pointer">

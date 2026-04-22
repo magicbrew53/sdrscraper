@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb, query } from '@/lib/db'
+import { getDb, query, pgUuidArray } from '@/lib/db'
 import { buildContactsWhere, PRIORITY_EXPR } from '@/lib/query-builder'
 
 function esc(val: unknown): string {
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     rows = await query<Record<string, unknown>>(db,
       `SELECT *, ${PRIORITY_EXPR} AS call_priority FROM contacts ${idWhere}
        ORDER BY call_priority DESC NULLS LAST`,
-      [selectedIds]
+      [pgUuidArray(selectedIds)]
     )
   } else {
     const { where, args } = buildContactsWhere(newOnly ? { ...filters, exported: 'not_exported' } : filters)
@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         last_exported_at = now(),
         export_count = COALESCE(export_count, 0) + 1
        WHERE id = ANY($1::uuid[])`,
-      [ids]
+      [pgUuidArray(ids)]
     )
   }
 

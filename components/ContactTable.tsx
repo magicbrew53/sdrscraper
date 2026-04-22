@@ -19,7 +19,7 @@ const DEFAULT_VISIBLE: ColKey[] = [
 ]
 
 const COL_LABELS: Record<ColKey, string> = {
-  priority: 'Priority', status: 'Status', niche: 'Niche', name: 'Name',
+  priority: 'Score', status: 'Status', niche: 'Niche', name: 'Name',
   title: 'Title', company: 'Company', industry: 'Industry', email: 'Email',
   phone: 'Phone', linkedin: 'Li', confidence: 'Conf.', verif: 'Verif.',
   site: 'Site', active: 'Co.', person: 'Person', dm: 'DM', last_verified: 'Last Verified',
