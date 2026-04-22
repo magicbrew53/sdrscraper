@@ -80,8 +80,29 @@ export async function GET(req: NextRequest) {
     'Person Verified', 'Person Current Title',
     'DM Score', 'DM Reasoning',
     'Auto Downgraded', 'Call Priority',
+    'Verification Summary',
     'Previously Exported', 'Export Count',
   ]
+
+  function buildVerifSummary(r: Record<string, unknown>): string {
+    const vs = r.verification_status as string | null
+    if (!vs || vs === 'unverified') return ''
+    if (vs === 'pending') return 'Verifying...'
+    const parts: string[] = []
+    if (r.website_alive === true) parts.push('Site live')
+    else if (r.website_alive === false) return `Site dead (${r.website_http_status ?? 'timeout'})`
+    if (r.company_active === true) parts.push('Active')
+    else if (r.company_active === false) parts.push(`Possibly inactive (${r.company_active_confidence != null ? Math.round((r.company_active_confidence as number) * 100) + '%' : '?'})`)
+    if (r.person_verified === true) {
+      const changed = r.person_current_title && r.title &&
+        (r.person_current_title as string).toLowerCase() !== (r.title as string).toLowerCase()
+      parts.push(changed ? `Title changed (now ${r.person_current_title})` : 'Person confirmed')
+    } else if (r.person_verified === false) {
+      parts.push('Person unconfirmed')
+    }
+    if (r.dm_score != null) parts.push(`DM ${Math.round((r.dm_score as number) * 100)}%`)
+    return parts.join(' · ')
+  }
 
   const csvLines = [
     headers.join(','),
@@ -105,6 +126,7 @@ export async function GET(req: NextRequest) {
       r.dm_reasoning,
       boolStr(r.auto_downgraded),
       r.call_priority != null ? String(r.call_priority) : '',
+      buildVerifSummary(r),
       r.last_exported_at ? 'yes' : 'no',
       r.export_count ?? 0,
     ].map(esc).join(','))

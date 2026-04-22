@@ -10,18 +10,19 @@ import OverrideForm from './OverrideForm'
 const ALL_COLS = [
   'priority', 'status', 'niche', 'name', 'title', 'company',
   'industry', 'email', 'phone', 'linkedin', 'confidence',
-  'verif', 'site', 'active', 'person', 'dm', 'last_verified',
+  'verif', 'verif_summary', 'site', 'active', 'person', 'dm', 'last_verified',
 ] as const
 type ColKey = typeof ALL_COLS[number]
 
 const DEFAULT_VISIBLE: ColKey[] = [
-  'priority', 'status', 'name', 'title', 'company', 'email', 'phone', 'dm', 'last_verified',
+  'priority', 'status', 'name', 'title', 'company', 'email', 'phone', 'verif_summary', 'last_verified',
 ]
 
 const COL_LABELS: Record<ColKey, string> = {
   priority: 'Score', status: 'Status', niche: 'Niche', name: 'Name',
   title: 'Title', company: 'Company', industry: 'Industry', email: 'Email',
   phone: 'Phone', linkedin: 'Li', confidence: 'Conf.', verif: 'Verif.',
+  verif_summary: 'Verification Summary',
   site: 'Site', active: 'Co.', person: 'Person', dm: 'DM', last_verified: 'Last Verified',
 }
 
@@ -83,6 +84,68 @@ function getRowBorderStyle(contact: Contact): React.CSSProperties {
     return { borderLeft: '3px solid #eab308' }
   }
   return {}
+}
+
+function VerifSummary({ contact }: { contact: Contact }) {
+  const vs = contact.verification_status
+  if (!vs || vs === 'unverified') return <span className="text-gray-600">—</span>
+  if (vs === 'pending') return <span className="text-gray-400 italic">⏳ Verifying...</span>
+
+  const parts: React.ReactNode[] = []
+
+  // Site
+  if (contact.website_alive !== null) {
+    if (contact.website_alive) {
+      parts.push(<span key="site" className="text-green-400">✅ Site live</span>)
+    } else {
+      const code = contact.website_http_status ? ` (${contact.website_http_status})` : ''
+      return <span className="text-red-400">❌ Site dead{code}</span>
+    }
+  }
+
+  // Company
+  if (contact.company_active !== null) {
+    const conf = contact.company_active_confidence
+    if (contact.company_active) {
+      parts.push(<span key="co" className="text-green-400">✅ Active</span>)
+    } else {
+      const pct = conf != null ? ` (${Math.round(conf * 100)}%)` : ''
+      parts.push(<span key="co" className="text-yellow-400">⚠️ Possibly inactive{pct}</span>)
+    }
+  }
+
+  // Person
+  if (contact.person_verified !== null) {
+    if (contact.person_verified) {
+      const changed = contact.person_current_title &&
+        contact.title &&
+        contact.person_current_title.toLowerCase() !== contact.title.toLowerCase()
+      if (changed) {
+        parts.push(<span key="person" className="text-yellow-400">⚠️ Title changed (now {contact.person_current_title})</span>)
+      } else {
+        parts.push(<span key="person" className="text-green-400">✅ Person confirmed</span>)
+      }
+    } else {
+      parts.push(<span key="person" className="text-gray-400">❓ Person unconfirmed</span>)
+    }
+  }
+
+  // DM Score
+  if (contact.dm_score != null) {
+    const pct = Math.round(contact.dm_score * 100)
+    const cls = pct >= 70 ? 'text-green-400' : pct >= 50 ? 'text-yellow-400' : 'text-red-400'
+    parts.push(<span key="dm" className={cls}>DM {pct}%</span>)
+  }
+
+  if (parts.length === 0) return <span className="text-gray-600">—</span>
+
+  return (
+    <span className="text-xs">
+      {parts.map((p, i) => (
+        <span key={i}>{i > 0 && <span className="text-gray-600"> · </span>}{p}</span>
+      ))}
+    </span>
+  )
 }
 
 function Truncated({ text, maxLen = 38 }: { text: string | null; maxLen?: number }) {
@@ -469,6 +532,9 @@ function ContactRow({
         {show('verif') && (
           <td className="px-2 py-2 text-center w-14"><VerifIcon status={contact.verification_status} /></td>
         )}
+        {show('verif_summary') && (
+          <td className="px-3 py-2 w-64 max-w-xs"><VerifSummary contact={contact} /></td>
+        )}
         {show('site') && (
           <td className="px-2 py-2 text-center w-10"><BoolIcon value={contact.website_alive} /></td>
         )}
@@ -601,6 +667,7 @@ export default function ContactTable({ contacts, selectedIds, onSelectionChange,
               {show('linkedin') && <th className="px-2 py-2 w-10 text-center">Li</th>}
               {show('confidence') && <th className="px-3 py-2 w-16">Conf.</th>}
               {show('verif') && <th className="px-2 py-2 w-14 text-center" title="Verification">Verif.</th>}
+              {show('verif_summary') && <th className="px-3 py-2 w-64">Verification Summary</th>}
               {show('site') && <th className="px-2 py-2 w-10 text-center" title="Website alive">Site</th>}
               {show('active') && <th className="px-2 py-2 w-10 text-center" title="Company active">Co.</th>}
               {show('person') && <th className="px-2 py-2 w-10 text-center" title="Person verified">Person</th>}
