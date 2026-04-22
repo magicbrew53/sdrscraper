@@ -15,7 +15,7 @@ const ALL_COLS = [
 type ColKey = typeof ALL_COLS[number]
 
 const DEFAULT_VISIBLE: ColKey[] = [
-  'priority', 'status', 'name', 'title', 'company', 'email', 'phone', 'verif_summary', 'last_verified',
+  'priority', 'status', 'name', 'title', 'company', 'email', 'phone', 'confidence', 'verif_summary', 'last_verified',
 ]
 
 const COL_LABELS: Record<ColKey, string> = {
