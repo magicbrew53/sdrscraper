@@ -55,11 +55,30 @@ function ResultsShellInner({
     if (selectedIds.size === 0) return
     if (!window.confirm(`Delete ${selectedIds.size} selected contact${selectedIds.size === 1 ? '' : 's'}? This cannot be undone.`)) return
     setDeleting(true)
+
+    // If all filtered contacts are selected, send filters instead of IDs
+    const allSelected = allFilteredIds.length > 0 && selectedIds.size === allFilteredIds.length
+    const payload = allSelected
+      ? {
+          filters: {
+            upload_id: searchParams.upload_id || undefined,
+            status: searchParams.status || undefined,
+            niche: searchParams.niche || undefined,
+            industry: searchParams.industry || undefined,
+            search: searchParams.search || undefined,
+            verification_status: searchParams.verification_status || undefined,
+            hide_duplicates: searchParams.hide_duplicates !== 'false',
+            exported: searchParams.exported || undefined,
+            min_confidence: searchParams.min_confidence ? Number(searchParams.min_confidence) : null,
+          }
+        }
+      : { ids: [...selectedIds] }
+
     try {
       const res = await fetch('/api/contacts/bulk-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: [...selectedIds] }),
+        body: JSON.stringify(payload),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -72,7 +91,7 @@ function ResultsShellInner({
     } finally {
       setDeleting(false)
     }
-  }, [selectedIds, router])
+  }, [selectedIds, allFilteredIds, searchParams, router])
 
   return (
     <main className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
