@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Suspense } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ContactTable from '@/components/ContactTable'
 import Filters from '@/components/Filters'
@@ -31,7 +32,26 @@ export default function ResultsShell({
   searchParams,
   minConfidence,
 }: Props) {
+  const router = useRouter()
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDeleteSelected = async () => {
+    if (selectedIds.size === 0) return
+    if (!window.confirm(`Delete ${selectedIds.size} selected contact${selectedIds.size === 1 ? '' : 's'}? This cannot be undone.`)) return
+    setDeleting(true)
+    try {
+      await fetch('/api/contacts/bulk-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: [...selectedIds] }),
+      })
+      setSelectedIds(new Set())
+      router.refresh()
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <main className="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
@@ -45,6 +65,15 @@ export default function ResultsShell({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              disabled={deleting}
+              className="text-sm bg-red-800 hover:bg-red-700 disabled:opacity-40 text-white px-4 py-2 rounded transition-colors whitespace-nowrap"
+            >
+              {deleting ? 'Deleting…' : `Delete Selected (${selectedIds.size})`}
+            </button>
+          )}
           <Suspense>
             <ExportButton selectedIds={selectedIds} />
           </Suspense>
