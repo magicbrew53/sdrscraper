@@ -37,6 +37,7 @@ function ResultsShellInner({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [allFilteredIds, setAllFilteredIds] = useState<string[]>([])
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // Fetch all filtered IDs (for select-all across pages)
   useEffect(() => {
@@ -55,11 +56,17 @@ function ResultsShellInner({
     if (!window.confirm(`Delete ${selectedIds.size} selected contact${selectedIds.size === 1 ? '' : 's'}? This cannot be undone.`)) return
     setDeleting(true)
     try {
-      await fetch('/api/contacts/bulk-delete', {
-        method: 'DELETE',
+      const res = await fetch('/api/contacts/bulk-delete', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: [...selectedIds] }),
       })
+      if (!res.ok) {
+        const data = await res.json()
+        setDeleteError(data.error || `Delete failed (${res.status})`)
+        return
+      }
+      setDeleteError(null)
       setSelectedIds(new Set())
       router.refresh()
     } finally {
@@ -79,6 +86,7 @@ function ResultsShellInner({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {deleteError && <span className="text-xs text-red-400">{deleteError}</span>}
           {selectedIds.size > 0 && (
             <button
               onClick={handleDeleteSelected}
