@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { sql, getDb, query } from '@/lib/db'
 import { parseApolloCSVDetailed, type ParsedContact } from '@/lib/csv-parser'
 import { classifyUpload } from '@/lib/classify'
@@ -94,9 +94,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    classifyUpload(uploadId).catch(err => {
-      console.error('[upload] Classification error:', err)
-      sql`UPDATE uploads SET status = 'failed' WHERE id = ${uploadId}`.catch(() => {})
+    after(async () => {
+      try {
+        await classifyUpload(uploadId)
+      } catch (err) {
+        console.error('[upload] Classification error:', err)
+        sql`UPDATE uploads SET status = 'failed' WHERE id = ${uploadId}`.catch(() => {})
+      }
     })
 
     return NextResponse.json({

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { getDb, query } from '@/lib/db'
 import { getEligibleContactIds, runVerification, type VerifyFilters } from '@/lib/verify'
 
@@ -22,12 +22,16 @@ export async function POST(req: NextRequest) {
     )
 
     // Fire-and-forget
-    runVerification(job.id, contactIds).catch(err => {
-      console.error('[verify] Error:', err)
-      query(db,
-        `UPDATE verification_jobs SET status = 'failed' WHERE id = $1`,
-        [job.id]
-      ).catch(() => {})
+    after(async () => {
+      try {
+        await runVerification(job.id, contactIds)
+      } catch (err) {
+        console.error('[verify] Error:', err)
+        query(db,
+          `UPDATE verification_jobs SET status = 'failed' WHERE id = $1`,
+          [job.id]
+        ).catch(() => {})
+      }
     })
 
     return NextResponse.json({ jobId: job.id, eligibleCount: contactIds.length })
