@@ -44,14 +44,14 @@ export async function GET(req: NextRequest) {
     if (newOnly) idWhere += ` AND last_exported_at IS NULL`
     rows = await query<Record<string, unknown>>(db,
       `SELECT *, ${PRIORITY_EXPR} AS call_priority FROM contacts ${idWhere}
-       ORDER BY call_priority DESC NULLS LAST`,
+       ORDER BY (${PRIORITY_EXPR}) DESC NULLS LAST`,
       [pgUuidArray(selectedIds)]
     )
   } else {
     const { where, args } = buildContactsWhere(newOnly ? { ...filters, exported: 'not_exported' } : filters)
     rows = await query<Record<string, unknown>>(db,
       `SELECT *, ${PRIORITY_EXPR} AS call_priority FROM contacts ${where}
-       ORDER BY call_priority DESC NULLS LAST`,
+       ORDER BY (${PRIORITY_EXPR}) DESC NULLS LAST`,
       args
     )
   }

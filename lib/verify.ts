@@ -1,12 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { getDb, query, sql, pgUuidArray } from './db'
+import { getDb, query, pgUuidArray } from './db'
 import { serperSearch, formatResultsForPrompt } from './serper'
 
 const anthropic = new Anthropic()
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface EligibleContact {
+export interface EligibleContact {
   id: string
   first_name: string | null
   last_name: string | null
@@ -53,7 +53,7 @@ interface DMCheckResult {
 const CHROME_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 
-async function checkWebsite(url: string): Promise<WebsiteCheckResult> {
+export async function checkWebsite(url: string): Promise<WebsiteCheckResult> {
   const normalised = url.startsWith('http') ? url : `https://${url}`
 
   const doRequest = async (method: 'HEAD' | 'GET'): Promise<WebsiteCheckResult> => {
@@ -83,7 +83,7 @@ async function checkWebsite(url: string): Promise<WebsiteCheckResult> {
 
 // ─── Check 2: Company active ──────────────────────────────────────────────────
 
-async function checkCompanyActive(
+export async function checkCompanyActive(
   contact: EligibleContact,
   websiteAlive: boolean | null
 ): Promise<CompanyCheckResult> {
@@ -131,7 +131,7 @@ Return ONLY JSON:
 
 // ─── Check 3: Person still at company ────────────────────────────────────────
 
-async function checkPerson(contact: EligibleContact): Promise<PersonCheckResult> {
+export async function checkPerson(contact: EligibleContact): Promise<PersonCheckResult> {
   const name = [contact.first_name, contact.last_name].filter(Boolean).join(' ')
   const results = await serperSearch(`"${name}" "${contact.company_name}"`, 5)
   const formatted = formatResultsForPrompt(results)
@@ -187,7 +187,7 @@ Return ONLY JSON:
 
 // ─── Check 4: DM scoring ──────────────────────────────────────────────────────
 
-async function checkDMScore(contact: EligibleContact): Promise<DMCheckResult> {
+export async function checkDMScore(contact: EligibleContact): Promise<DMCheckResult> {
   const effectiveNiche = contact.override_niche || contact.mqs_niche || 'unknown'
 
   const prompt = `You are scoring whether a person is likely a decision maker or key influencer for purchasing myQuest Skills (MQS) — an AI-powered conversational skill practice platform used for training employees in communication skills.

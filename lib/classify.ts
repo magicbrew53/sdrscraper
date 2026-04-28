@@ -4,7 +4,7 @@ import { ClassificationResult } from './types'
 
 const client = new Anthropic()
 
-const SYSTEM_PROMPT = `You are a lead classification engine for myQuest Skills (MQS), an AI-powered conversational skill practice and skill mapping platform.
+export const SYSTEM_PROMPT = `You are a lead classification engine for myQuest Skills (MQS), an AI-powered conversational skill practice and skill mapping platform.
 
 YOUR TASK: For each contact, determine whether their company operates in an MQS target niche. Classify based on the COMPANY — not the individual's title. A VP of Sales at a behavioral health training company is a Fit because the COMPANY is in-niche, not because the person is in sales.
 
