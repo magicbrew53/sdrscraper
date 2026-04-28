@@ -64,7 +64,7 @@ export default function CheckPage() {
     setError(null)
   }
 
-  async function handleClassify(e: React.FormEvent) {
+  async function handleClassify(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault()
     setClassifying(true)
     setError(null)
@@ -212,9 +212,6 @@ export default function CheckPage() {
           </div>
         )}
 
-        <div className="mt-6 text-center">
-          <a href="/results" className="text-sm text-gray-500 hover:text-gray-400">← Back to results</a>
-        </div>
       </div>
     </div>
   )
