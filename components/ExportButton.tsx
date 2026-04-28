@@ -39,11 +39,30 @@ export default function ExportButton({ selectedIds }: Props) {
       .catch(() => setPreview(null))
   }, [buildPreviewParams])
 
-  const doExport = (newOnly: boolean) => {
+  const doExport = async (newOnly: boolean) => {
     const params = buildPreviewParams()
     if (newOnly) params.set('new_only', 'true')
-    window.location.href = `/api/contacts/export?${params.toString()}`
     setShowModal(false)
+    try {
+      const res = await fetch(`/api/contacts/export?${params.toString()}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        alert(`Export failed: ${body.error ?? res.statusText}`)
+        return
+      }
+      const blob = await res.blob()
+      const disposition = res.headers.get('Content-Disposition') ?? ''
+      const filenameMatch = disposition.match(/filename="([^"]+)"/)
+      const filename = filenameMatch?.[1] ?? 'export.csv'
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      alert(`Export failed: ${err instanceof Error ? err.message : String(err)}`)
+    }
   }
 
   const handleClick = async () => {

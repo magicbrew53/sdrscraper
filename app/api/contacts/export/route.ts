@@ -18,6 +18,7 @@ function pctStr(v: unknown) {
 }
 
 export async function GET(req: NextRequest) {
+  try {
   const db = getDb()
   const p = req.nextUrl.searchParams
 
@@ -152,4 +153,11 @@ export async function GET(req: NextRequest) {
       'Content-Disposition': `attachment; filename="${filename}"`,
     },
   })
+  } catch (err) {
+    console.error('[export] error:', err)
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    )
+  }
 }
